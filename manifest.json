@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "id": "corsair-void",
+  "name": "Corsair VOID Elite",
+  "version": "2.0.0",
+  "author": "AlexR1712",
+  "license": "MIT",
+  "description": "Battery monitoring and hardware controls for the Corsair VOID Elite Wireless headset.",
+  "kinds": [
+    "service",
+    "bar-widget",
+    "panel"
+  ],
+  "activation": "on-demand",
+  "entryPoints": {
+    "service": "Service.qml",
+    "barWidget": "BarWidget.qml",
+    "panel": "Panel.qml"
+  },
+  "barWidget": {
+    "displayName": "Corsair VOID Elite",
+    "description": "Monitor battery and wireless state; adjust native PipeWire volume, mute, default output, sidetone, and headset alerts.",
+    "category": "Audio",
+    "allowMultiple": false,
+    "defaultSection": "right",
+    "defaults": {
+      "refreshIntervalSec": 15,
+      "showPercentage": true
+    },
+    "schema": [
+      {
+        "key": "refreshIntervalSec",
+        "type": "integer",
+        "label": "Refresh interval (seconds)",
+        "min": 5,
+        "max": 300,
+        "step": 5,
+        "defaultValue": 15
+      },
+      {
+        "key": "showPercentage",
+        "type": "boolean",
+        "label": "Show battery percentage in bar",
+        "defaultValue": true
+      }
+    ]
+  }
+}

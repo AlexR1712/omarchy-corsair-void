@@ -1,0 +1,3 @@
+# Permit Omarchy administrators to use the Corsair VOID kernel driver's
+# write-only sidetone and alert controls. No HID device-node access is granted.
+ACTION=="add|change", SUBSYSTEM=="hid", DRIVER=="hid-corsair-void", ATTR{sidetone_max}=="*", RUN+="/usr/bin/chgrp wheel /sys%p/set_sidetone", RUN+="/usr/bin/chmod 0620 /sys%p/set_sidetone", RUN+="/usr/bin/chgrp wheel /sys%p/send_alert", RUN+="/usr/bin/chmod 0620 /sys%p/send_alert"

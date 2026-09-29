@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/omarchy/corsair-void"
+
+find_hid_path() {
+  local path
+  for path in /sys/bus/hid/drivers/hid-corsair-void/*; do
+    [[ -f "$path/sidetone_max" ]] || continue
+    readlink -f "$path"
+    return 0
+  done
+  return 1
+}
+
+find_battery_path() {
+  local path
+  for path in /sys/class/power_supply/corsair-void-*-battery; do
+    [[ -d "$path" ]] || continue
+    printf '%s\n' "$path"
+    return 0
+  done
+  return 1
+}
+
+read_file() {
+  local path="$1" fallback="${2:-}"
+  if [[ -r "$path" ]]; then
+    tr -d '\n' < "$path"
+  else
+    printf '%s' "$fallback"
+  fi
+}
+
+status() {
+  local hid_path="" battery_path="" wireless_status="unknown"
+  hid_path="$(find_hid_path || true)"
+  battery_path="$(find_battery_path || true)"
+  if [[ -n "$hid_path" ]]; then
+    wireless_status="$(read_file "$(dirname "$hid_path")/wireless_status" unknown)"
+  fi
+
+  local present="0" capacity="-1" charging="0" battery_status="Unknown"
+  if [[ -n "$battery_path" ]]; then
+    present="$(read_file "$battery_path/present" 0)"
+    capacity="$(read_file "$battery_path/capacity" -1)"
+    battery_status="$(read_file "$battery_path/status" Unknown)"
+    [[ "$battery_status" == "Charging" || "$battery_status" == "Full" ]] && charging="1"
+  fi
+
+  local sidetone="-1"
+  [[ -r "$state_dir/sidetone" ]] && sidetone="$(read_file "$state_dir/sidetone" -1)"
+
+  printf 'detected=%s\n' "$([[ -n "$hid_path" ]] && printf 1 || printf 0)"
+  printf 'wireless_status=%s\n' "$wireless_status"
+  printf 'present=%s\n' "$present"
+  printf 'capacity=%s\n' "$capacity"
+  printf 'battery_status=%s\n' "$battery_status"
+  printf 'charging=%s\n' "$charging"
+  printf 'microphone_up=%s\n' "$([[ -n "$hid_path" ]] && read_file "$hid_path/microphone_up" -1 || printf -1)"
+  printf 'headset_firmware=%s\n' "$([[ -n "$hid_path" ]] && read_file "$hid_path/fw_version_headset" unknown || printf unknown)"
+  printf 'receiver_firmware=%s\n' "$([[ -n "$hid_path" ]] && read_file "$hid_path/fw_version_receiver" unknown || printf unknown)"
+  printf 'sidetone_max=%s\n' "$([[ -n "$hid_path" ]] && read_file "$hid_path/sidetone_max" 0 || printf 0)"
+  printf 'sidetone_writable=%s\n' "$([[ -n "$hid_path" && -w "$hid_path/set_sidetone" ]] && printf 1 || printf 0)"
+  printf 'sidetone=%s\n' "$sidetone"
+}
+
+case "${1:-status}" in
+  status)
+    status
+    ;;
+  sidetone)
+    percent="${2:-}"
+    [[ "$percent" =~ ^[0-9]+$ ]] && (( percent >= 0 && percent <= 100 )) || {
+      printf 'Sidetone must be 0-100\n' >&2
+      exit 2
+    }
+    hid_path="$(find_hid_path || true)"
+    [[ -n "$hid_path" ]] || { printf 'Corsair VOID driver not found\n' >&2; exit 2; }
+    [[ -w "$hid_path/set_sidetone" ]] || { printf 'Sidetone permission has not been enabled\n' >&2; exit 3; }
+    max="$(read_file "$hid_path/sidetone_max" 55)"
+    raw=$(( (percent * max + 50) / 100 ))
+    printf '%s\n' "$raw" > "$hid_path/set_sidetone"
+    install -d -m 0700 "$state_dir"
+    printf '%s\n' "$percent" > "$state_dir/sidetone"
+    ;;
+  alert)
+    hid_path="$(find_hid_path || true)"
+    [[ -n "$hid_path" && -w "$hid_path/send_alert" ]] || {
+      printf 'Headset alert permission has not been enabled\n' >&2
+      exit 3
+    }
+    printf '1\n' > "$hid_path/send_alert"
+    ;;
+  *)
+    printf 'Usage: %s {status|sidetone 0-100|alert}\n' "$0" >&2
+    exit 2
+    ;;
+esac
