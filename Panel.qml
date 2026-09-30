@@ -7,8 +7,8 @@ import qs.Ui
 // audio state live here, so opening this on multiple monitors stays coherent.
 Panel {
   id: root
-  moduleName: "corsair-void"
-  ipcTarget: "corsair-void"
+  moduleName: "io.github.alexr1712.corsair-void"
+  ipcTarget: "io.github.alexr1712.corsair-void"
   manageIpc: false
 
   property var anchorItem: null

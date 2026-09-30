@@ -7,10 +7,10 @@ import qs.Ui
 // Per-monitor presentation for the shared Corsair VOID service.
 BarWidget {
   id: root
-  moduleName: "corsair-void"
+  moduleName: "io.github.alexr1712.corsair-void"
 
   readonly property var service: bar && bar.shell
-    ? bar.shell.serviceFor("corsair-void") : null
+    ? bar.shell.serviceFor("io.github.alexr1712.corsair-void") : null
   readonly property bool showPercentage: settings.showPercentage !== false
   readonly property bool opened: panelLoader.item ? panelLoader.item.opened === true : false
   readonly property var barIdentity: root
@@ -62,7 +62,7 @@ BarWidget {
   }
 
   IpcHandler {
-    target: "corsair-void"
+    target: "io.github.alexr1712.corsair-void"
     function open(): void { root.open() }
     function close(): void { root.close() }
     function show(): void { root.open() }

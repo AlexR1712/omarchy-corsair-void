@@ -1,6 +1,6 @@
 # Corsair VOID Elite for Omarchy
 
-![Corsair VOID Elite widget showing battery, output volume, sidetone, and device status](assets/corsair-void-widget.png)
+![Corsair VOID Elite widget showing battery, output volume, sidetone, and device status](preview.png)
 
 An Omarchy bar widget for the Corsair VOID Elite Wireless headset.
 
@@ -19,7 +19,16 @@ omarchy plugin add https://github.com/AlexR1712/omarchy-corsair-void.git --enabl
 The plugin appears in the default bar section chosen by Omarchy. You can move it explicitly with:
 
 ```bash
-omarchy bar move corsair-void --section right
+omarchy bar move io.github.alexr1712.corsair-void --section right
+```
+
+### Upgrading from 2.x
+
+Version 3 adopts the permanent marketplace ID. Replace the earlier local ID once:
+
+```bash
+omarchy plugin remove corsair-void --yes
+omarchy plugin add https://github.com/AlexR1712/omarchy-corsair-void.git --enable
 ```
 
 ## Features
@@ -38,20 +47,30 @@ Left-click opens the panel, right-click toggles headset output mute, middle-clic
 
 Battery monitoring and audio controls work without extra privileges. The kernel exposes sidetone and the built-in alert as root-only sysfs controls. The bundled rule grants the Omarchy `wheel` group write access only to this headset driver's `set_sidetone` and `send_alert` attributes. The plugin itself contains no privilege-elevation path.
 
-Install the root-owned rule once, then reconnect the wireless dongle:
+Install the root-owned rule once, then reconnect the wireless dongle. The
+command writes the reviewed rule directly instead of asking `sudo` to read a
+mutable file from the plugin checkout, and verifies the installed bytes:
 
 ```bash
-sudo install -Dm0644 \
-  ~/.config/omarchy/plugins/corsair-void/udev/99-corsair-void-omarchy.rules \
-  /etc/udev/rules.d/99-corsair-void-omarchy.rules
+sudo tee /etc/udev/rules.d/99-corsair-void-omarchy.rules >/dev/null <<'EOF'
+# Permit Omarchy administrators to use the Corsair VOID kernel driver's
+# write-only sidetone and alert controls. No HID device-node access is granted.
+ACTION=="add|change", SUBSYSTEM=="hid", DRIVER=="hid-corsair-void", ATTR{sidetone_max}=="*", RUN+="/usr/bin/chgrp wheel /sys%p/set_sidetone", RUN+="/usr/bin/chmod 0620 /sys%p/set_sidetone", RUN+="/usr/bin/chgrp wheel /sys%p/send_alert", RUN+="/usr/bin/chmod 0620 /sys%p/send_alert"
+EOF
+printf '%s  %s\n' \
+  b101f3b7959b62f6fbe5d38722c298a804717be6ad99da30ba63b4e260fcd332 \
+  /etc/udev/rules.d/99-corsair-void-omarchy.rules | sha256sum -c -
 sudo udevadm control --reload-rules
 ```
 
 The panel will report hardware controls as available after the receiver is reconnected.
 
-To remove the extra permission later:
+## Uninstall
+
+Remove the plugin and its optional hardware-control permission:
 
 ```bash
+omarchy plugin remove io.github.alexr1712.corsair-void --yes
 sudo rm /etc/udev/rules.d/99-corsair-void-omarchy.rules
 sudo udevadm control --reload-rules
 ```
@@ -67,7 +86,7 @@ sudo udevadm control --reload-rules
 For a machine-readable health check:
 
 ```bash
-omarchy-shell corsair-void state
+omarchy-shell io.github.alexr1712.corsair-void state
 ```
 
 ## License

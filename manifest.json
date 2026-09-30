@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "id": "corsair-void",
+  "id": "io.github.alexr1712.corsair-void",
   "name": "Corsair VOID Elite",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "author": "AlexR1712",
   "license": "MIT",
   "description": "Battery monitoring and hardware controls for the Corsair VOID Elite Wireless headset.",

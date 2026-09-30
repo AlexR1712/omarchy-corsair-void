@@ -21,8 +21,8 @@ Item {
   property var barWidgetRegistry: null
   property string omarchyPath: Quickshell.env("OMARCHY_PATH") || "/usr/share/omarchy"
 
-  readonly property string pluginId: manifest && manifest.id ? String(manifest.id) : "corsair-void"
-  readonly property string helperPath: Quickshell.env("HOME") + "/.config/omarchy/plugins/corsair-void/bin/corsair-void-control"
+  readonly property string pluginId: manifest && manifest.id ? String(manifest.id) : "io.github.alexr1712.corsair-void"
+  readonly property string helperPath: Quickshell.env("HOME") + "/.config/omarchy/plugins/io.github.alexr1712.corsair-void/bin/corsair-void-control"
 
   readonly property var defaultSettingValues: ({
     refreshIntervalSec: 15,
@@ -248,7 +248,7 @@ Item {
   // --------------------------------------------------- persistent warnings
   PersistentProperties {
     id: persisted
-    reloadableId: "corsair-void"
+    reloadableId: "io.github.alexr1712.corsair-void"
     property int notifiedBatteryBand: 0
   }
 
