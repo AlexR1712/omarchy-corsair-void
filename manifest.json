@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "id": "io.github.alexr1712.corsair-void",
-  "name": "Corsair VOID Elite",
-  "version": "3.0.0",
+  "name": "Corsair VOID",
+  "version": "3.1.0",
   "author": "AlexR1712",
   "license": "MIT",
-  "description": "Battery monitoring and hardware controls for the Corsair VOID Elite Wireless headset.",
+  "description": "Battery and audio controls for Corsair VOID Elite and VOID Wireless v2 headsets.",
   "kinds": [
     "service",
     "bar-widget",
@@ -18,7 +18,7 @@
     "panel": "Panel.qml"
   },
   "barWidget": {
-    "displayName": "Corsair VOID Elite",
+    "displayName": "Corsair VOID",
     "description": "Monitor battery and wireless state; adjust native PipeWire volume, mute, default output, sidetone, and headset alerts.",
     "category": "Audio",
     "allowMultiple": false,

@@ -28,6 +28,7 @@ Panel {
   readonly property bool sinkFound: !!service && service.sinkFound
   readonly property bool muted: !!service && service.muted
   readonly property bool defaultOutput: !!service && service.defaultOutput
+  readonly property bool alertSupported: !!service && service.alertSupported
   readonly property bool hardwareWritable: !!service && service.hardwareWritable
   readonly property int batteryPercent: service ? service.batteryPercent : -1
   readonly property int volumePercent: service ? service.volumePercent : 0
@@ -87,7 +88,7 @@ Panel {
     else if (cursorIndex === idxDefault && !defaultOutput) service.makeDefault()
     else if (cursorIndex >= idxPresetStart && cursorIndex <= idxPresetEnd)
       service.setSidetonePreset((cursorIndex - idxPresetStart) * 25)
-    else if (cursorIndex === idxAlert && hardwareWritable) service.playAlert()
+    else if (cursorIndex === idxAlert && alertSupported) service.playAlert()
   }
 
   KeyboardPanel {
@@ -115,7 +116,7 @@ Panel {
         if (t === "m" || t === "M") root.service.toggleMute()
         else if (t === "d" || t === "D") root.service.makeDefault()
         else if (t === "r" || t === "R") root.service.refresh()
-        else if ((t === "a" || t === "A") && root.hardwareWritable) root.service.playAlert()
+        else if ((t === "a" || t === "A") && root.alertSupported) root.service.playAlert()
       }
       onCloseRequested: root.close()
       onTabRequested: function(direction) { root.switchPanel(direction) }
@@ -356,7 +357,7 @@ Panel {
             Text {
               visible: !root.hardwareWritable
               width: parent.width
-              text: "The root-owned Corsair udev rule is missing or inactive."
+              text: "Hardware controls unavailable. Check the headset backend and device permissions."
               wrapMode: Text.WordWrap
               textFormat: Text.PlainText
               color: root.dim
@@ -419,7 +420,7 @@ Panel {
             }
             InfoPair { label: "Audio sink"; value: root.sinkFound ? "Available" : "Unavailable" }
             Button {
-              visible: root.hardwareWritable
+              visible: root.alertSupported
               width: parent.width
               text: "Play headset alert"
               iconText: "󰂞"

@@ -1,0 +1,77 @@
+#!/usr/bin/env python3
+"""Adapt HeadsetControl's VOID Wireless v2 backend to the plugin status API."""
+import json
+import os
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+
+STATE = Path(os.environ.get("XDG_STATE_HOME", str(Path.home() / ".local/state"))) / "omarchy/corsair-void"
+
+def run(*args):
+    return subprocess.run(["headsetcontrol", "-d", "0x1b1c:0x2a08", *args],
+                          capture_output=True, text=True, timeout=12)
+
+def main():
+    action = sys.argv[1] if len(sys.argv) > 1 else "status"
+    if action == "status":
+        data = dict(detected=1, wireless_status="unknown", present=0, capacity=-1,
+                    charging=0, battery_status="Unknown", microphone_up=-1,
+                    headset_firmware="unknown", receiver_firmware="unknown",
+                    sidetone_max=128, sidetone_writable=0, sidetone=-1,
+                    alert_supported=0, backend="headsetcontrol")
+        if shutil.which("headsetcontrol"):
+            try:
+                result = run("-b", "-o", "json")
+                devices = json.loads(result.stdout).get("devices", []) if result.returncode == 0 else []
+            except (OSError, ValueError, subprocess.TimeoutExpired):
+                devices = []
+            if not devices:
+                data["backend_error"] = "Headset query failed; check receiver permissions and HeadsetControl version"
+            device = next((d for d in devices if d.get("id_product", "").lower() == "0x2a08"), {})
+            battery = device.get("battery", {})
+            status = battery.get("status", "")
+            level = battery.get("level", -1)
+            data["sidetone_writable"] = int(device.get("status") == "success" and "CAP_SIDETONE" in device.get("capabilities", []))
+            if status in ("BATTERY_AVAILABLE", "BATTERY_CHARGING") and isinstance(level, (int, float)) and 0 <= level <= 100:
+                data.update(wireless_status="connected", present=1, capacity=int(level),
+                            charging=int(status == "BATTERY_CHARGING"), battery_status="Charging" if status == "BATTERY_CHARGING" else "Unknown")
+            elif status == "BATTERY_UNAVAILABLE":
+                data["wireless_status"] = "unknown"
+            elif status == "BATTERY_DISCONNECTED":
+                data["wireless_status"] = "disconnected"
+        else:
+            data["backend_error"] = "Install headsetcontrol for Wireless v2 support"
+        saved = STATE / "sidetone-v2"
+        if saved.exists():
+            try:
+                value = int(saved.read_text().strip())
+                if 0 <= value <= 100:
+                    data["sidetone"] = value
+            except (OSError, ValueError):
+                pass
+        for key, value in data.items():
+            print(f"{key}={value}")
+        return 0
+    if action == "sidetone" and len(sys.argv) == 3 and sys.argv[2].isdigit() and 0 <= int(sys.argv[2]) <= 100:
+        percent = int(sys.argv[2])
+        result = run("-s", str((percent * 128 + 50) // 100), "-o", "json")
+        response = json.loads(result.stdout)
+        devices = response.get("devices", [])
+        actions = response.get("actions", [])
+        if result.returncode or not devices or not actions or any(a.get("status") != "success" for a in actions) or any(d.get("status") != "success" or d.get("errors") for d in devices):
+            print(result.stderr or "Could not set sidetone", file=sys.stderr)
+            return 1
+        STATE.mkdir(parents=True, exist_ok=True, mode=0o700)
+        (STATE / "sidetone-v2").write_text(str(percent) + "\n")
+        return 0
+    print("Wireless v2 supports status and sidetone 0-100", file=sys.stderr)
+    return 2
+
+if __name__ == "__main__":
+    try:
+        sys.exit(main())
+    except (OSError, ValueError, subprocess.TimeoutExpired) as error:
+        print(str(error), file=sys.stderr)
+        sys.exit(1)

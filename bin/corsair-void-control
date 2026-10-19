@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Wireless v2 uses a different HID protocol from the kernel VOID driver.
+for product in /sys/bus/usb/devices/*/idProduct; do
+  [[ -r "$product" && "$(cat "$product")" == "2a08" ]] || continue
+  [[ "$(cat "${product%/*}/idVendor")" == "1b1c" ]] || continue
+  exec python3 "$(dirname "$0")/corsair-void-v2" "$@"
+done
+
 state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/omarchy/corsair-void"
 
 find_hid_path() {
@@ -62,6 +69,7 @@ status() {
   printf 'receiver_firmware=%s\n' "$([[ -n "$hid_path" ]] && read_file "$hid_path/fw_version_receiver" unknown || printf unknown)"
   printf 'sidetone_max=%s\n' "$([[ -n "$hid_path" ]] && read_file "$hid_path/sidetone_max" 0 || printf 0)"
   printf 'sidetone_writable=%s\n' "$([[ -n "$hid_path" && -w "$hid_path/set_sidetone" ]] && printf 1 || printf 0)"
+  printf 'alert_supported=%s\n' "$([[ -n "$hid_path" && -w "$hid_path/send_alert" ]] && printf 1 || printf 0)"
   printf 'sidetone=%s\n' "$sidetone"
 }
 

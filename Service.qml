@@ -160,6 +160,7 @@ Item {
   readonly property string wirelessStatus: String(deviceData.wireless_status || "unknown")
   readonly property bool connected: wirelessStatus === "connected"
     || (wirelessStatus === "unknown" && batteryPresent)
+  readonly property bool alertSupported: deviceData.alert_supported === "1"
   readonly property bool hardwareWritable: deviceData.sidetone_writable === "1"
   readonly property int sidetonePercent: Math.max(0, Math.min(100,
     Model.number(deviceData.sidetone, 0)))
@@ -268,7 +269,7 @@ Item {
       ? omarchyPath + "/bin/omarchy-notification-send"
       : "omarchy-notification-send"
     Quickshell.execDetached([
-      command, "--app-name", "Corsair VOID Elite",
+      command, "--app-name", "Corsair VOID",
       "-u", band === 2 ? "critical" : "normal",
       "Headset battery low", batteryPercent + "% remaining"
     ])

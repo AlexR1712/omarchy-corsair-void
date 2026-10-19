@@ -1,13 +1,16 @@
-# Corsair VOID Elite for Omarchy
+# Corsair VOID for Omarchy
 
 ![Corsair VOID Elite widget showing battery, output volume, sidetone, and device status](preview.png)
 
-An Omarchy bar widget for the Corsair VOID Elite Wireless headset.
+An Omarchy bar widget for Corsair VOID Elite Wireless and VOID Wireless v2 headsets.
+
+Wireless v2 (receiver `1b1c:2a08`) requires `headsetcontrol` 4.1 or newer and Python 3. Install with `omarchy pkg add headsetcontrol`. This backend provides battery monitoring and sidetone; firmware, boom position, and alerts are unavailable. Charging state is shown only when reported by the backend. The package supplies HID permissions; reconnect the receiver after installation if access is denied.
 
 ## Requirements
 
 - Omarchy 4 with the Quickshell-based shell
-- Linux 6.13 or newer with the in-kernel `hid-corsair-void` driver
+- VOID Elite: Linux 6.13 or newer with the in-kernel `hid-corsair-void` driver
+- VOID Wireless v2: HeadsetControl 4.1 or newer and Python 3
 - UPower and PipeWire, included with Omarchy
 
 ## Install
@@ -33,17 +36,19 @@ omarchy plugin add https://github.com/AlexR1712/omarchy-corsair-void.git --enabl
 
 ## Features
 
-- Battery percentage and charge state through Quickshell's native UPower service
-- Exact wireless connected/disconnected state from the in-kernel `hid-corsair-void` driver
+- Battery percentage through native UPower (Elite) or HeadsetControl (Wireless v2)
+- Exact wireless connected/disconnected state from the Elite kernel driver; v2 connection confirmed by successful battery readings
 - Persistent low-battery desktop notifications at 20% and 10%, emitted once across all monitors
 - Native PipeWire output volume, mute, and default-output selection
 - Hardware sidetone presets and slider
-- Microphone boom position, headset/receiver firmware, and built-in alert test
+- Elite only: microphone boom position, headset/receiver firmware, and built-in alert test
 - Configurable refresh interval and compact/percentage bar display
 
 Left-click opens the panel, right-click toggles headset output mute, middle-click refreshes immediately, and the mouse wheel changes volume. The panel supports arrow-key navigation plus `M` for mute, `D` for default output, `R` for refresh, and `A` for the headset alert.
 
 ## Hardware permissions
+
+The sysfs rule below applies only to VOID Elite. Wireless v2 uses HeadsetControl’s packaged HID permissions instead.
 
 Battery monitoring and audio controls work without extra privileges. The kernel exposes sidetone and the built-in alert as root-only sysfs controls. The bundled rule grants the Omarchy `wheel` group write access only to this headset driver's `set_sidetone` and `send_alert` attributes. The plugin itself contains no privilege-elevation path.
 
